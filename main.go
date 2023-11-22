@@ -19,6 +19,11 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, r.URL.RawPath)
 }
 
+func FaqHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte("<h3>1.what question can I ask here?</h3>  <h4>Any dumbs question is welcome here</h4>"))
+}
+
 func main() {
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
@@ -27,8 +32,9 @@ func main() {
 			return
 		case "/contact":
 			contact(writer, request)
-
 			return
+		case "/faq":
+			FaqHandler(writer, request)
 		default:
 			func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusNotFound)
