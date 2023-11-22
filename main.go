@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 )
 
@@ -20,6 +22,16 @@ func pathHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+
+	r.Get("/picture/{id}/{t}", func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+		t := chi.URLParam(r, "t")
+		fmt.Fprint(w, id)
+		fmt.Fprint(w, t)
+	})
 	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
 		case "/":
@@ -38,7 +50,7 @@ func main() {
 	})
 
 	fmt.Println("run server on port 10010\nPlease try to enjoy coding!!:)")
-	err := http.ListenAndServe(":10010", nil)
+	err := http.ListenAndServe(":10010", r)
 	if err != nil {
 		panic("run server error!")
 	}
