@@ -1,4 +1,4 @@
-package C
+package controller
 
 import "net/http"
 
