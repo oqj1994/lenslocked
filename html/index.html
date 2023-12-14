@@ -1,30 +1,35 @@
-<!doctype html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="">
-<h1 class="text-3xl font-bold bg-white pl-10 mt-8">
-    DrinksAndWalk
-</h1>
+{{ define  "page" }}
+
 <hr>
-<div class="flex justify-between flex-row bg-white w-1/2 mx-auto px-16 py-8 rounded-lg">
-    <div class=" text-lg  py-8 font-bold rounded-md bg-gray-300 px-16 ">
-        <img src="../assert/1.jpeg" class="w-32 h-48 mt-8 mb-8">
-        <p class="text-white">柠檬茶</p>
+<div class="grid grid-cols-2 gap-16 bg-white w-1/2 mx-auto px-16 py-8 rounded-lg">
+    <div class=" text-lg   font-bold rounded-md  px-8 border-b-2">
+        <img src="assert/1.jpeg" class="w-32 h-48 mt-8 mb-8">
+        <div class="text-gray-400">
+        <p class="">柠檬茶</p>
         <p>价格: 5元/杯</p>
-    </div><div class=" text-lg  py-8 font-bold rounded-md bg-gray-300 px-16 ">
-        <img src="../assert/coffe.webp" class="w-32 h-48 mt-8 mb-8">
-        <p class="text-white">山卡拉咖啡</p>
+        </div>
+    </div>
+    <div class=" text-lg   font-bold rounded-md  px-8 border-b-2">
+        <img src="assert/coffe.webp" class="w-32 h-48 mt-8 mb-8">
+        <div class="text-gray-400">
+        <p class="">山卡拉咖啡</p>
+            <p>价格: 5元/杯</p>
+
+        </div>
+    </div>
+    <div class=" text-lg   font-bold rounded-md  px-8 border-b-2">
+        <img src="assert/1.jpeg" class="w-32 mt-8 mb-8">
+        <div class="text-gray-400">
+        <p class="">柠檬茶</p>
         <p>价格: 5元/杯</p>
-    </div><div class=" text-lg  py-8 font-bold rounded-md bg-gray-300 px-16 ">
-        <img src="../assert/1.jpeg" class="w-32 mt-8 mb-8">
-        <p class="text-white">柠檬茶</p>
-        <p>价格: 5元/杯</p>
+        </div>
     </div>
 
 </div>
-</body>
-</html>
+{{ end }}
+
+{{define "js"}}
+<script>
+
+</script>
+{{end}}

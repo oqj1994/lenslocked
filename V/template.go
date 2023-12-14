@@ -3,9 +3,25 @@ package V
 import (
 	"fmt"
 	"html/template"
+	"lenslocked/html"
 	"log"
 	"net/http"
 )
+
+func Must(t *Template, e error) *Template {
+	if e != nil {
+		panic(e)
+	}
+	return t
+}
+
+func ExcuteFS(name string) (*Template, error) {
+	tpl, err := template.ParseFS(html.FS, "home.html", name)
+	if err != nil {
+		return nil, fmt.Errorf("parsing files error: %w", err)
+	}
+	return &Template{htmlTpl: tpl}, nil
+}
 
 func Parse(filepath string) (*Template, error) {
 	tpl, err := template.ParseFiles(filepath)
