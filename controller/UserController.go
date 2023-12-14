@@ -7,6 +7,9 @@ import (
 )
 
 type UserController struct {
+	Template struct{
+		New Template
+	}
 	US M.UserService
 }
 
@@ -33,4 +36,8 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 
 func (u UserController) Find(name string) {
 
+}
+
+func (u UserController) RenderSigninPage(w http.ResponseWriter, r *http.Request) {
+	u.Template.New.Execute(w,nil)
 }
