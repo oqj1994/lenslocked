@@ -55,5 +55,13 @@ func (u UserController) ProcessLogin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	cookie := &http.Cookie{
+		Name:     "email",
+		Value:    "oqj@qq.com",
+		Path:     "/",
+		MaxAge:   60 * 60,
+		HttpOnly: true,
+	}
+	http.SetCookie(w, cookie)
 	fmt.Fprintf(w, "user %v authencate successful", user)
 }

@@ -37,6 +37,7 @@ func main() {
 	uc.Template.Login = tpl
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
+	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
 	r.Post("/login", uc.ProcessLogin)
 	r.Handle("/assert/*", http.StripPrefix("/assert/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
