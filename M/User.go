@@ -2,6 +2,7 @@ package M
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"strings"
@@ -14,7 +15,7 @@ type User struct {
 	PasswordHash string
 }
 
-type NewUser struct {
+type CreateUserParms struct {
 	Name     string
 	Email    string
 	Password string
@@ -24,7 +25,7 @@ type UserService struct {
 	DB *sql.DB
 }
 
-func (us *UserService) Create(user NewUser) (*User, error) {
+func (us *UserService) Create(user CreateUserParms) (*User, error) {
 	user.Email = strings.ToLower(user.Email)
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -46,4 +47,24 @@ values ($1,$2,$3) returning id;`
 	}
 	return &u, nil
 
+}
+
+type AuthenticateParms struct {
+	Email    string
+	Password string
+}
+
+func (us *UserService) Authenticate(parms AuthenticateParms) (*User, error) {
+	user := User{}
+	sqlStr := `select * from users where email=$1 `
+	row := us.DB.QueryRow(sqlStr, strings.ToLower(parms.Email))
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.PasswordHash)
+	if err != nil {
+		return nil, err
+	}
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(parms.Password)) != nil {
+		return nil, errors.New("password error!")
+	}
+
+	return &user, nil
 }

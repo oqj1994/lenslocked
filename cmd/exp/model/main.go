@@ -16,7 +16,7 @@ func main() {
 	}
 
 	us := M.UserService{DB: db}
-	user, err := us.Create(M.NewUser{
+	user, err := us.Create(M.CreateUserParms{
 		Name:     "jia",
 		Email:    "oqj@foo.com",
 		Password: "123456",

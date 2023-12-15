@@ -15,8 +15,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-
-
 func main() {
 	db, err := M.Open(M.DefaultConfig())
 	if err != nil {
@@ -27,18 +25,20 @@ func main() {
 	r.Use(middleware.Logger)
 	tpl := V.Must(V.ExcuteFS("index.html"))
 	r.Get("/", controller.StaticController(tpl))
-	tpl = V.Must(V.ExcuteFS("signin.html"))
-	
+	tpl = V.Must(V.ExcuteFS("signup.html"))
+
 	uc := controller.UserController{
-		Template: struct{New controller.Template}{
-			New: tpl,
-		},
 		US: M.UserService{
 			DB: db,
 		},
 	}
-	r.Get("/signin", uc.RenderSigninPage)
+	uc.Template.New = tpl
+	tpl = V.Must(V.ExcuteFS("login.html"))
+	uc.Template.Login = tpl
+	r.Get("/signup", uc.New)
+	r.Get("/login", uc.Login)
 	r.Post("/user", uc.Create)
+	r.Post("/login", uc.ProcessLogin)
 	r.Handle("/assert/*", http.StripPrefix("/assert/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
 		f, err := html.FS.ReadFile(path.Join("assert", p))

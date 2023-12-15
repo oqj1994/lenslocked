@@ -1,14 +1,16 @@
 package controller
 
 import (
+	"fmt"
 	"lenslocked/M"
 	"log"
 	"net/http"
 )
 
 type UserController struct {
-	Template struct{
-		New Template
+	Template struct {
+		New   Template
+		Login Template
 	}
 	US M.UserService
 }
@@ -18,7 +20,7 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
 	name := "yyChat"
-	_, err := u.US.Create(M.NewUser{
+	_, err := u.US.Create(M.CreateUserParms{
 		Name:     name,
 		Email:    email,
 		Password: password,
@@ -38,6 +40,20 @@ func (u UserController) Find(name string) {
 
 }
 
-func (u UserController) RenderSigninPage(w http.ResponseWriter, r *http.Request) {
-	u.Template.New.Execute(w,nil)
+func (u UserController) New(w http.ResponseWriter, r *http.Request) {
+	u.Template.New.Execute(w, nil)
+}
+func (u UserController) Login(w http.ResponseWriter, r *http.Request) {
+	u.Template.Login.Execute(w, nil)
+}
+func (u UserController) ProcessLogin(w http.ResponseWriter, r *http.Request) {
+	parms := M.AuthenticateParms{}
+	parms.Email = r.PostFormValue("email")
+	parms.Password = r.PostFormValue("password")
+	user, err := u.US.Authenticate(parms)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fmt.Fprintf(w, "user %v authencate successful", user)
 }
