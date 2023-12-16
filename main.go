@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/gorilla/csrf"
 )
 
 func main() {
@@ -21,6 +22,8 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
+	csrfMiddleWare:=csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	tpl := V.Must(V.ExcuteFS("index.html"))
@@ -52,7 +55,7 @@ func main() {
 	})))
 
 	fmt.Println("run server on port 10010\nPlease try to enjoy coding!!:)")
-	err = http.ListenAndServe(":10010", r)
+	err = http.ListenAndServe(":10010", csrfMiddleWare(r))
 	if err != nil {
 		log.Println(err)
 		panic("run server error!")

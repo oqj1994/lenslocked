@@ -1,11 +1,15 @@
 package V
 
 import (
+	"bytes"
 	"fmt"
 	"html/template"
+	"io"
 	"lenslocked/html"
 	"log"
 	"net/http"
+
+	"github.com/gorilla/csrf"
 )
 
 func Must(t *Template, e error) *Template {
@@ -15,34 +19,51 @@ func Must(t *Template, e error) *Template {
 	return t
 }
 
+func RenderData(r *http.Request,data interface{})map[string]interface{}{
+	return map[string]interface{}{
+		csrf.TemplateTag:csrf.TemplateField(r),
+		"data":data,
+	}
+}
+
 func ExcuteFS(name string) (*Template, error) {
-	tpl, err := template.ParseFS(html.FS, "home.html", name)
+	tpl:=template.New("home.html")
+	tpl=tpl.Funcs(template.FuncMap{
+		"csrfField":func () (template.HTML,error) {
+			return "",fmt.Errorf("this csrfField not implemented!")
+		},
+	})
+	tpl,err:=tpl.ParseFS(html.FS, "home.html", name)
+	
 	if err != nil {
 		return nil, fmt.Errorf("parsing files error: %w", err)
 	}
 	return &Template{htmlTpl: tpl}, nil
 }
 
-func Parse(filepath string) (*Template, error) {
-	tpl, err := template.ParseFiles(filepath)
-	if err != nil {
-		return nil, fmt.Errorf("parsing files error: %v", err)
-	}
-	return &Template{htmlTpl: tpl}, nil
 
-}
 
 type Template struct {
 	htmlTpl *template.Template
 }
 
-func (t *Template) Execute(w http.ResponseWriter, data interface{}) {
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	err := t.htmlTpl.Execute(w, data)
-	if err != nil {
-		log.Printf("excute template error: %v", err)
-		http.Error(w, "There was an error executing the template.", http.StatusInternalServerError)
-		return
+func (t *Template) Execute(w http.ResponseWriter,r *http.Request, data interface{})error {
+	tpl,err:=t.htmlTpl.Clone()
+	if err != nil{
+		log.Printf("clone template error: %v", err)
+		return fmt.Errorf("cloning template error :%w",err)
 	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	tpl=tpl.Funcs(template.FuncMap{"csrfField":func ()template.HTML  {
+		return csrf.TemplateField(r)
+	}})
+	var buf bytes.Buffer
+
+	err = tpl.Execute(&buf, data)
+	if err != nil {
+		log.Printf("execute template error: %v", err)
+		return fmt.Errorf("execute template error :%w",err)
+	}
+	io.Copy(w,&buf)
+	return nil
 }

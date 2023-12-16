@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"lenslocked/M"
+	"lenslocked/V"
 	"log"
 	"net/http"
 )
@@ -41,10 +42,19 @@ func (u UserController) Find(name string) {
 }
 
 func (u UserController) New(w http.ResponseWriter, r *http.Request) {
-	u.Template.New.Execute(w, nil)
+	err:=u.Template.New.Execute(w,r, V.RenderData(r,nil))
+	if err != nil{
+		http.Error(w,err.Error(),http.StatusInternalServerError)
+		return
+	}
 }
 func (u UserController) Login(w http.ResponseWriter, r *http.Request) {
-	u.Template.Login.Execute(w, nil)
+	
+	err:=u.Template.Login.Execute(w,r, V.RenderData(r,nil))
+	if err != nil{
+		http.Error(w,err.Error(),http.StatusInternalServerError)
+		return
+	}
 }
 func (u UserController) ProcessLogin(w http.ResponseWriter, r *http.Request) {
 	parms := M.AuthenticateParms{}
