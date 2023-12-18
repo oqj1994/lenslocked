@@ -27,8 +27,11 @@ func String(n int) (string, error) {
 	return toString, nil
 }
 
-const SessionTokenBytes = 32
+const MinSessionTokenBytes = 32
 
-func SessionToken() (string, error) {
-	return String(SessionTokenBytes)
+func SessionToken(n int) (string, error) {
+	if n < MinSessionTokenBytes {
+		return String(MinSessionTokenBytes)
+	}
+	return String(n)
 }

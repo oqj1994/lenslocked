@@ -1,15 +1,26 @@
 package controller
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
-const CookieSession = "session"
+const (
+	CookieSession         = "session"
+	DefaultCookieLiveTime = 60 * 60
+)
 
 func newCookie(name, value string) *http.Cookie {
+	expiredTime := time.Now().Add(DefaultCookieLiveTime * time.Second)
+	if value == "" {
+		expiredTime = time.Now()
+	}
 	return &http.Cookie{
 		Name:     name,
 		Value:    value,
 		Path:     "/",
 		HttpOnly: true,
+		Expires:  expiredTime,
 	}
 }
 

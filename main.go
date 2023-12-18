@@ -35,7 +35,8 @@ func main() {
 			DB: db,
 		},
 		SS: M.SessionService{
-			DB: db,
+			DB:            db,
+			BytesPerToken: 32,
 		},
 	}
 	uc.Template.New = tpl
@@ -44,6 +45,7 @@ func main() {
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
 	r.Get("/user/me", uc.CurrentUser)
+	r.Get("/logout", uc.Logout)
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
 	r.Post("/login", uc.ProcessLogin)

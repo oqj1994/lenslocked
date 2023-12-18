@@ -17,8 +17,6 @@ type UserController struct {
 	SS M.SessionService
 }
 
-
-
 func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 	//TODO: get the userName and password from request
 	email := r.PostFormValue("email")
@@ -40,6 +38,7 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
+	fmt.Println("session in controller :", session)
 	setCookie(w, CookieSession, session.Token)
 
 	http.Redirect(w, r, "/user/me", http.StatusFound)
@@ -49,8 +48,9 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 
 func (u UserController) CurrentUser(w http.ResponseWriter, r *http.Request) {
 	token, err := readCookie(r, CookieSession)
+	fmt.Println("token :", token)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("CurrentUser: get cookie error ", err)
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
@@ -61,6 +61,29 @@ func (u UserController) CurrentUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Fprint(w, user)
+}
+
+func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
+	token, err := readCookie(r, CookieSession)
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	user, err := u.SS.User(token)
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/", http.StatusFound)
+		return
+	}
+	err = u.SS.Delete(user.ID)
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "delete session error", http.StatusInternalServerError)
+		return
+	}
+	setCookie(w, CookieSession, "")
+	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (u UserController) Find(name string) {
