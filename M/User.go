@@ -9,7 +9,7 @@ import (
 )
 
 type User struct {
-	ID           uint
+	ID           int
 	Name         string
 	Email        string
 	PasswordHash string

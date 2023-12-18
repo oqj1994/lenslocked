@@ -7,7 +7,6 @@ require (
 	github.com/gorilla/csrf v1.7.2
 	github.com/jackc/pgx/v5 v5.5.1
 	golang.org/x/crypto v0.9.0
-	golang.org/x/tools v0.6.0
 )
 
 require (

@@ -22,7 +22,7 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-	csrfMiddleWare:=csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
+	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -34,12 +34,16 @@ func main() {
 		US: M.UserService{
 			DB: db,
 		},
+		SS: M.SessionService{
+			DB: db,
+		},
 	}
 	uc.Template.New = tpl
 	tpl = V.Must(V.ExcuteFS("login.html"))
 	uc.Template.Login = tpl
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
+	r.Get("/user/me", uc.CurrentUser)
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
 	r.Post("/login", uc.ProcessLogin)
