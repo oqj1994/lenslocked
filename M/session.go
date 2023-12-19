@@ -21,7 +21,7 @@ type SessionService struct {
 }
 
 func (ss *SessionService) Create(userID int) (*Session, error) {
-	sqlStr := `update sessions set token_hash=$2 where user_id=$1 returning id;`
+	// sqlStr := `update sessions set token_hash=$2 where user_id=$1 returning id;`
 	token, err := rand.SessionToken(ss.BytesPerToken)
 	if err != nil {
 		return nil, err
@@ -31,14 +31,17 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 		Token:     token,
 		TokenHash: ss.hash(token),
 	}
-	//change the Token field to TokenHashField
-	row := ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
-	err = row.Scan(&session.ID)
-	if err == sql.ErrNoRows {
-		sqlStr = `insert into sessions(user_id,token_hash) values ($1,$2) returning id;`
-		row = ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
-		err = row.Scan(&session.ID)
-	}
+	// //change the Token field to TokenHashField
+	// row := ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
+	// err = row.Scan(&session.ID)
+	// if err == sql.ErrNoRows {
+	// 	sqlStr = `insert into sessions(user_id,token_hash) values ($1,$2) returning id;`
+	// 	row = ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
+	// 	err = row.Scan(&session.ID)
+	// }
+	sqlStr:=`insert into sessions(user_id,token_hash) values($1, $2) on CONFLICT (user_id) DO update set token_hash =$2 returning id`
+	row:=ss.DB.QueryRow(sqlStr,userID,ss.hash(token))
+	err=row.Scan(&session.ID)
 	if err != nil {
 		return nil, err
 	}
