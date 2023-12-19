@@ -45,7 +45,7 @@ func main() {
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
 	r.Get("/user/me", uc.CurrentUser)
-	r.Get("/logout", uc.Logout)
+	r.Post("/logout", uc.Logout)
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
 	r.Post("/login", uc.ProcessLogin)

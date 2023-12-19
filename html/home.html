@@ -25,9 +25,13 @@
         <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4">
           <a href="/signup">sign up</a>
         </button>
-        <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4 text-red-400">
-          <a href="/logout">Logout</a>
-        </button>
+        <form method="post" action="/logout">
+          <div>{{ csrfField }}</div>
+          <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4 text-red-400" type="submit">
+           Logout
+          </button>
+        </form>
+
       </nav>
     </header>
     {{ template "page" .}}

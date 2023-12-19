@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 	"lenslocked/rand"
 )
 
@@ -20,7 +21,7 @@ type SessionService struct {
 }
 
 func (ss *SessionService) Create(userID int) (*Session, error) {
-	sqlStr := `insert into sessions(user_id,token_hash) values ($1,$2) returning id;`
+	sqlStr := `update sessions set token_hash=$2 where user_id=$1 returning id;`
 	token, err := rand.SessionToken(ss.BytesPerToken)
 	if err != nil {
 		return nil, err
@@ -33,6 +34,11 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 	//change the Token field to TokenHashField
 	row := ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
 	err = row.Scan(&session.ID)
+	if err == sql.ErrNoRows {
+		sqlStr = `insert into sessions(user_id,token_hash) values ($1,$2) returning id;`
+		row = ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
+		err = row.Scan(&session.ID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -50,20 +56,25 @@ func (ss SessionService) Delete(userID int) error {
 }
 
 func (ss SessionService) User(token string) (*User, error) {
-	var id int
-	sqlStr := `select user_id from sessions where token_hash=$1 ;`
-	tokenHash := ss.hash(token)
-	row := ss.DB.QueryRow(sqlStr, tokenHash)
-	err := row.Scan(&id)
-	if err != nil {
-		return nil, err
-	}
 	user := User{}
-	sqlStr = `select id,name,email from users where id=$1 ;`
-	row = ss.DB.QueryRow(sqlStr, id)
-	err = row.Scan(&user.ID, &user.Name, &user.Email)
+	//sqlStr := `select user_id from sessions where token_hash=$1 ;`
+	//tokenHash := ss.hash(token)
+	//row := ss.DB.QueryRow(sqlStr, tokenHash)
+	//err := row.Scan(&id)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//sqlStr = `select id,name,email from users where id=$1 ;`
+	//row = ss.DB.QueryRow(sqlStr, id)
+	//err = row.Scan(&user.ID, &user.Name, &user.Email)
+	//if err != nil {
+	//	return nil, err
+	//}
+	sqlStr := `select name,email from users u join sessions s on u.id=s.user_id and s.token_hash=$1;`
+	row := ss.DB.QueryRow(sqlStr, ss.hash(token))
+	err := row.Scan(&user.Name, &user.Email)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create :%w", err)
 	}
 	return &user, nil
 }
