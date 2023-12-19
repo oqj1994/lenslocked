@@ -70,7 +70,7 @@ func (ss SessionService) User(token string) (*User, error) {
 	//if err != nil {
 	//	return nil, err
 	//}
-	sqlStr := `select name,email from users u join sessions s on u.id=s.user_id and s.token_hash=$1;`
+	sqlStr := `select name,email from users u join sessions s on u.id=s.user_id where s.token_hash=$1;`
 	row := ss.DB.QueryRow(sqlStr, ss.hash(token))
 	err := row.Scan(&user.Name, &user.Email)
 	if err != nil {
