@@ -7,6 +7,7 @@ import (
 	"lenslocked/V"
 	"lenslocked/controller"
 	"lenslocked/html"
+	"lenslocked/migrations"
 	"log"
 	"net/http"
 	"path"
@@ -18,10 +19,15 @@ import (
 
 func main() {
 	db, err := M.Open(M.DefaultConfig())
+	fmt.Println(M.DefaultConfig().String())
 	if err != nil {
 		panic(err)
 	}
 	defer db.Close()
+	err = M.MigrateFS(migrations.FS, db, ".")
+	if err != nil {
+		panic(err)
+	}
 	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
 
 	r := chi.NewRouter()

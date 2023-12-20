@@ -39,9 +39,10 @@ func (ss *SessionService) Create(userID int) (*Session, error) {
 	// 	row = ss.DB.QueryRow(sqlStr, session.UserID, session.TokenHash)
 	// 	err = row.Scan(&session.ID)
 	// }
-	sqlStr:=`insert into sessions(user_id,token_hash) values($1, $2) on CONFLICT (user_id) DO update set token_hash =$2 returning id`
-	row:=ss.DB.QueryRow(sqlStr,userID,ss.hash(token))
-	err=row.Scan(&session.ID)
+	sqlStr := `insert into sessions(user_id,token_hash) values($1, $2) 
+            on CONFLICT (user_id) DO update set token_hash =$2 returning id`
+	row := ss.DB.QueryRow(sqlStr, userID, ss.hash(token))
+	err = row.Scan(&session.ID)
 	if err != nil {
 		return nil, err
 	}
