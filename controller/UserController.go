@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"lenslocked/M"
 	"lenslocked/V"
+	"lenslocked/context"
 	"log"
 	"net/http"
 )
@@ -47,20 +48,13 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u UserController) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	token, err := readCookie(r, CookieSession)
-	fmt.Println("token :", token)
-	if err != nil {
-		fmt.Println("CurrentUser: get cookie error ", err)
-		http.Redirect(w, r, "/login", http.StatusFound)
+	user,err:=context.User(r.Context())
+	if err !=nil {
+		fmt.Println(err)
+		http.Redirect(w,r,"/login",http.StatusFound)
 		return
 	}
-	user, err := u.SS.User(token)
-	if err != nil {
-		fmt.Println("get user error", err)
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-	fmt.Fprint(w, user)
+	fmt.Fprintf(w, "current user name: %s",user.Name)
 }
 
 func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
@@ -124,3 +118,40 @@ func (u UserController) ProcessLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/user/me", http.StatusFound)
 
 }
+
+type MiddleWare struct{
+	SS M.SessionService
+}
+
+func (m MiddleWare)SetUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token, err := readCookie(r, CookieSession)
+	if err != nil {
+		fmt.Println("CurrentUser: get cookie error ", err)
+		next.ServeHTTP(w,r)
+		return
+	}
+	user, err := m.SS.User(token)
+	fmt.Println(user)
+	if err != nil {
+		fmt.Println("get user error", err)
+		next.ServeHTTP(w,r)
+		return
+	}
+	ctx:=context.WithUser(r.Context(),user)
+	r=r.WithContext(ctx)
+	next.ServeHTTP(w,r)
+	})
+}
+
+func (m MiddleWare)RequireUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_,err:=context.User(r.Context())
+		if err !=nil{
+			fmt.Println(err)
+			http.Error(w,"required user",http.StatusBadRequest)
+			return
+		}
+		next.ServeHTTP(w,r)
+	})}
+

@@ -28,7 +28,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
+
+
+	
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -36,21 +38,25 @@ func main() {
 	r.Get("/", controller.StaticController(tpl))
 	tpl = V.Must(V.ExcuteFS("signup.html"))
 
-	uc := controller.UserController{
-		US: M.UserService{
-			DB: db,
-		},
-		SS: M.SessionService{
-			DB:            db,
-			BytesPerToken: 32,
-		},
+	userService:= M.UserService{
+		DB: db,
 	}
+	sessionService:= M.SessionService{
+		DB:            db,
+		BytesPerToken: 32,
+	}
+	uc := controller.UserController{
+		US:userService,
+		SS:sessionService,
+	}
+	middleware:=controller.MiddleWare{SS: sessionService}
+	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
+
 	uc.Template.New = tpl
 	tpl = V.Must(V.ExcuteFS("login.html"))
 	uc.Template.Login = tpl
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
-	r.Get("/user/me", uc.CurrentUser)
 	r.Post("/logout", uc.Logout)
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
@@ -65,6 +71,11 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write(f)
 	})))
+	r.Route("/user/me",func(r chi.Router) {
+		r.Use(middleware.SetUser)
+		r.Use(middleware.RequireUser)
+		r.Get("/",uc.CurrentUser)
+	})
 
 	fmt.Println("run server on port 10010\nPlease try to enjoy coding!!:)")
 	err = http.ListenAndServe(":10010", csrfMiddleWare(r))

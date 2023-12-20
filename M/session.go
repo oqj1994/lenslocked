@@ -61,19 +61,7 @@ func (ss SessionService) Delete(userID int) error {
 
 func (ss SessionService) User(token string) (*User, error) {
 	user := User{}
-	//sqlStr := `select user_id from sessions where token_hash=$1 ;`
-	//tokenHash := ss.hash(token)
-	//row := ss.DB.QueryRow(sqlStr, tokenHash)
-	//err := row.Scan(&id)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//sqlStr = `select id,name,email from users where id=$1 ;`
-	//row = ss.DB.QueryRow(sqlStr, id)
-	//err = row.Scan(&user.ID, &user.Name, &user.Email)
-	//if err != nil {
-	//	return nil, err
-	//}
+	
 	sqlStr := `select name,email from users u join sessions s on u.id=s.user_id where s.token_hash=$1;`
 	row := ss.DB.QueryRow(sqlStr, ss.hash(token))
 	err := row.Scan(&user.Name, &user.Email)

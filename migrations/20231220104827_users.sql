@@ -1,6 +1,6 @@
 -- +goose Up
 -- +goose StatementBegin
-create table users(
+create table if NOT EXISTS users(
     id serial primary key ,
     name text not null ,
     email text unique not null,
