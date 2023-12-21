@@ -19,17 +19,24 @@
             <a>about</a>
           </button>
         </div>
-        <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4 text-green-400">
-          <a href="/login">login</a>
-        </button>
-        <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4">
-          <a href="/signup">sign up</a>
-        </button>
+        {{ $user :=currentUser }}
+        {{if $user }}
+        <h1>{{ $user.Name }}</h1>
         <form method="post" action="/logout">
           <div>{{ csrfField }}</div>
           <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4 text-red-400" type="submit">
-           Logout
+            Logout
           </button>
+          {{else}}
+            <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4 text-green-400">
+              <a href="/login">login</a>
+            </button>
+            <button class="text-xl hover:bg-gray-600 font-blod px-10 mx-4">
+              <a href="/signup">sign up</a>
+            </button>
+        {{ end }}
+
+
         </form>
 
       </nav>

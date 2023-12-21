@@ -3,6 +3,7 @@ package main
 import "C"
 import (
 	"fmt"
+	"github.com/go-chi/chi/v5/middleware"
 	"lenslocked/M"
 	"lenslocked/V"
 	"lenslocked/controller"
@@ -13,7 +14,6 @@ import (
 	"path"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/gorilla/csrf"
 )
 
@@ -29,29 +29,26 @@ func main() {
 		panic(err)
 	}
 
-
-	
-
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	tpl := V.Must(V.ExcuteFS("index.html"))
-	r.Get("/", controller.StaticController(tpl))
-	tpl = V.Must(V.ExcuteFS("signup.html"))
-
-	userService:= M.UserService{
+	userService := M.UserService{
 		DB: db,
 	}
-	sessionService:= M.SessionService{
+	sessionService := M.SessionService{
 		DB:            db,
 		BytesPerToken: 32,
 	}
 	uc := controller.UserController{
-		US:userService,
-		SS:sessionService,
+		US: userService,
+		SS: sessionService,
 	}
-	middleware:=controller.MiddleWare{SS: sessionService}
-	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"))
+	userMiddleware := controller.MiddleWare{SS: sessionService}
+	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"), csrf.Secure(false))
 
+	r := chi.NewRouter()
+	r.Use(middleware.Logger, csrfMiddleWare, userMiddleware.SetUser)
+
+	tpl := V.Must(V.ExcuteFS("index.html"))
+	r.Get("/", controller.StaticController(tpl))
+	tpl = V.Must(V.ExcuteFS("signup.html"))
 	uc.Template.New = tpl
 	tpl = V.Must(V.ExcuteFS("login.html"))
 	uc.Template.Login = tpl
@@ -71,14 +68,14 @@ func main() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write(f)
 	})))
-	r.Route("/user/me",func(r chi.Router) {
-		r.Use(middleware.SetUser)
-		r.Use(middleware.RequireUser)
-		r.Get("/",uc.CurrentUser)
+	r.Route("/user/me", func(r chi.Router) {
+
+		r.Use(userMiddleware.RequireUser)
+		r.Get("/", uc.CurrentUser)
 	})
 
 	fmt.Println("run server on port 10010\nPlease try to enjoy coding!!:)")
-	err = http.ListenAndServe(":10010", csrfMiddleWare(r))
+	err = http.ListenAndServe(":10010", r)
 	if err != nil {
 		log.Println(err)
 		panic("run server error!")
