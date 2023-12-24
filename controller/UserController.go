@@ -16,6 +16,7 @@ type UserController struct {
 	}
 	US M.UserService
 	SS M.SessionService
+	ES M.EmailService
 }
 
 func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
@@ -76,6 +77,12 @@ func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "delete session error", http.StatusInternalServerError)
 		return
 	}
+	u.ES.Send(M.Email{
+		To:      user.Email,
+		Subject: "you had logout",
+		Text:    "",
+		HTML:    "<h1>sucessful to logout</h1>",
+	})
 	setCookie(w, CookieSession, "")
 	http.Redirect(w, r, "/", http.StatusFound)
 }

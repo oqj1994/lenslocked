@@ -3,7 +3,6 @@ package main
 import "C"
 import (
 	"fmt"
-	"github.com/go-chi/chi/v5/middleware"
 	"lenslocked/M"
 	"lenslocked/V"
 	"lenslocked/controller"
@@ -11,13 +10,24 @@ import (
 	"lenslocked/migrations"
 	"log"
 	"net/http"
+	"os"
 	"path"
+	"strconv"
+
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/csrf"
 )
 
 func main() {
+	err:=godotenv.Load(".env")
+	if err != nil{
+		panic(err)
+	}
+
+
 	db, err := M.Open(M.DefaultConfig())
 	fmt.Println(M.DefaultConfig().String())
 	if err != nil {
@@ -29,6 +39,7 @@ func main() {
 		panic(err)
 	}
 
+
 	userService := M.UserService{
 		DB: db,
 	}
@@ -36,9 +47,23 @@ func main() {
 		DB:            db,
 		BytesPerToken: 32,
 	}
+
+	smtpPortStr:= os.Getenv("SMTP_PORT")
+	smtpPort,err:=strconv.Atoi(smtpPortStr)
+	if  err!=nil {
+		panic(err)
+	}
+	emailService:=M.NewEmailService(M.SMTPConfig{
+		Host:     os.Getenv("SMTP_HOST"),
+		Port:      smtpPort,
+		UserName:  os.Getenv("SMTP_USERNAME"),
+		Password:  os.Getenv("SMTP_PASSWORD"),
+	})
+
 	uc := controller.UserController{
 		US: userService,
 		SS: sessionService,
+		ES: emailService,
 	}
 	userMiddleware := controller.MiddleWare{SS: sessionService}
 	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"), csrf.Secure(false))
