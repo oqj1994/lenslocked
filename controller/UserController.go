@@ -81,15 +81,6 @@ func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "delete session error", http.StatusInternalServerError)
 		return
 	}
-	err = u.ES.Send(M.Email{
-		To:      user.Email,
-		Subject: "you had logout",
-		Text:    "",
-		HTML:    "<h1>sucessful to logout</h1>",
-	})
-	if err != nil {
-		fmt.Println(err)
-	}
 	setCookie(w, CookieSession, "")
 	http.Redirect(w, r, "/", http.StatusFound)
 }

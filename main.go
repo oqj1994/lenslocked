@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
@@ -21,15 +22,55 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-func main() {
+type config struct{
+	SMTPConfig M.SMTPConfig
+	PostgresConfig M.PostgresConfig
+	Server struct{
+		Address string
+		Port int
+	}
+	CSRF	struct{
+		Key string
+		Secure bool
+	}
+}
+
+func initConfig()(config,error){
+	var cfg config
 	err:=godotenv.Load(".env")
 	if err != nil{
+		return cfg,err
+	}
+	cfg.PostgresConfig=M.DefaultConfig()
+	cfg.SMTPConfig.Host=os.Getenv("SMTP_HOST")
+	portStr:=os.Getenv("SMTP_PORT")
+	cfg.SMTPConfig.Port,err=strconv.Atoi(portStr)
+	if err !=nil{
+		return cfg,err
+	}
+	cfg.SMTPConfig.UserName=os.Getenv("SMTP_USERNAME")
+	cfg.SMTPConfig.Password=os.Getenv("SMTP_PASSWORD")
+
+	cfg.CSRF.Key="abcdefghizklmnopqrstuvwxyz123456"
+	cfg.CSRF.Secure=false
+
+	serverPortStr:=os.Getenv("SERVER_PORT")
+	cfg.Server.Port,err=strconv.Atoi(serverPortStr)
+	if err !=nil{
+		return cfg,err
+	}
+
+	return cfg,err
+}
+
+func main() {
+	cfg,err:=initConfig()
+	if err !=nil{
 		panic(err)
 	}
 
 
-	db, err := M.Open(M.DefaultConfig())
-	fmt.Println(M.DefaultConfig().String())
+	db, err := M.Open(cfg.PostgresConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -47,26 +88,22 @@ func main() {
 		DB:            db,
 		BytesPerToken: 32,
 	}
-
-	smtpPortStr:= os.Getenv("SMTP_PORT")
-	smtpPort,err:=strconv.Atoi(smtpPortStr)
-	if  err!=nil {
-		panic(err)
+	passwordResetService:=M.PasswordResetService{
+		BytesPerToken: 32,
+		DB:            db,
+		Duration:      1* time.Hour,
 	}
-	emailService:=M.NewEmailService(M.SMTPConfig{
-		Host:     os.Getenv("SMTP_HOST"),
-		Port:      smtpPort,
-		UserName:  os.Getenv("SMTP_USERNAME"),
-		Password:  os.Getenv("SMTP_PASSWORD"),
-	})
+
+	emailService:=M.NewEmailService(cfg.SMTPConfig)
 
 	uc := controller.UserController{
 		US: userService,
 		SS: sessionService,
 		ES: emailService,
+		PR: passwordResetService,
 	}
 	userMiddleware := controller.MiddleWare{SS: sessionService}
-	csrfMiddleWare := csrf.Protect([]byte("abcdefghizklmnopqrstuvwxyz123456"), csrf.Secure(false))
+	csrfMiddleWare := csrf.Protect([]byte(cfg.CSRF.Key), csrf.Secure(cfg.CSRF.Secure))
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, csrfMiddleWare, userMiddleware.SetUser)
@@ -77,8 +114,12 @@ func main() {
 	uc.Template.New = tpl
 	tpl = V.Must(V.ExcuteFS("login.html"))
 	uc.Template.Login = tpl
+	tpl = V.Must(V.ExcuteFS("forgetpassword.html"))
+	uc.Template.ForgetPassword=tpl
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
+	r.Get("/forgetPW",uc.PasswordReset)
+	r.Post("/precessForgetPassword",uc.ProcessForgetPassword)
 	r.Post("/logout", uc.Logout)
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
@@ -99,8 +140,8 @@ func main() {
 		r.Get("/", uc.CurrentUser)
 	})
 
-	fmt.Println("run server on port 10010\nPlease try to enjoy coding!!:)")
-	err = http.ListenAndServe(":10010", r)
+	fmt.Printf("run server on port %d\nPlease try to enjoy coding!!:)",cfg.Server.Port)
+	err = http.ListenAndServe(fmt.Sprintf(":%d",cfg.Server.Port), r)
 	if err != nil {
 		log.Println(err)
 		panic("run server error!")
