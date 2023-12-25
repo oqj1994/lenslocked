@@ -16,6 +16,7 @@ type UserController struct {
 		Login          Template
 		ForgetPassword Template
 		CheckYourEmail Template
+		ResetPassword Template
 	}
 	US M.UserService
 	SS M.SessionService
@@ -119,6 +120,42 @@ func (u UserController) ProcessForgetPassword(w http.ResponseWriter, r *http.Req
 		return
 	}
 	u.Template.CheckYourEmail.Execute(w, r, data)
+}
+
+//ResetPassword to render a page to reset password
+func (u UserController) ResetPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct{
+		Token string
+	}
+	data.Token=r.PostFormValue("token")
+	u.Template.ResetPassword.Execute(w,r,data)
+}
+
+func (u UserController) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct{
+		Token string
+		Password string
+	}
+	data.Token=r.PostFormValue("token")
+	data.Password=r.PostFormValue("password")
+	user,err:=u.PR.Consume(data.Token)
+	if err !=nil{
+		//TODO: 分别讨论 token失效 还是数据库无法连接
+		fmt.Println(err)
+		http.Error(w,"something went wrong",http.StatusInternalServerError)
+		return
+	}
+	//TODO: use UserService to update user's password
+
+	//TODO: if successed , login the user
+	session,err :=u.SS.Create(user.ID)
+	if err !=nil{
+		fmt.Println(err)
+		http.Error(w,"something went wrong",http.StatusInternalServerError)
+		return
+	}
+	setCookie(w,CookieSession,session.Token)
+	http.Redirect(w, r, "/user/me", http.StatusFound)
 }
 
 func (u UserController) New(w http.ResponseWriter, r *http.Request) {

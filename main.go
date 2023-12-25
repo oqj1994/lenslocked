@@ -108,14 +108,13 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, csrfMiddleWare, userMiddleware.SetUser)
 
-	tpl := V.Must(V.ExcuteFS("index.html"))
-	r.Get("/", controller.StaticController(tpl))
-	tpl = V.Must(V.ExcuteFS("signup.html"))
-	uc.Template.New = tpl
-	tpl = V.Must(V.ExcuteFS("login.html"))
-	uc.Template.Login = tpl
-	tpl = V.Must(V.ExcuteFS("forgetpassword.html"))
-	uc.Template.ForgetPassword=tpl
+	
+	r.Get("/", controller.StaticController(V.Must(V.ExcuteFS("index.html"))))
+	uc.Template.New = V.Must(V.ExcuteFS("signup.html"))
+	uc.Template.Login = V.Must(V.ExcuteFS("login.html"))
+	uc.Template.ForgetPassword=V.Must(V.ExcuteFS("forgetpassword.html"))
+	uc.Template.CheckYourEmail=V.Must(V.ExcuteFS("checkemail.html"))
+	uc.Template.ResetPassword=V.Must(V.ExcuteFS("resetpassword.html"))
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
 	r.Get("/forgetPW",uc.PasswordReset)
