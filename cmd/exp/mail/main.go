@@ -4,7 +4,7 @@ import (
 	"lenslocked/M"
 )
 
-func main(){
+func main() {
 	// m:=gomail.NewMessage()
 	// m.SetHeader("From","fun@club.com")
 	// m.SetHeader("To","fun@club.com")
@@ -33,15 +33,20 @@ func main(){
 	// 	HTML:    "<h1>Welcome!!</h1>",
 	// }
 
-	es:=M.NewEmailService(M.SMTPConfig{
+	es := M.NewEmailService(M.SMTPConfig{
 		Host:     "sandbox.smtp.mailtrap.io",
 		Port:     25,
-		UserName: "7eb4b9ffde3ef0",
-		Password: "b926a640148933",
+		UserName: "7b4e8c97b7bebc",
+		Password: "2136315cbe2186",
 	})
 	// err:=es.Send(email)
-	err:=es.ForgetPassword("oqj@163.com","djoiasdosdis788sbdiasduisd6s6d6asdsydbsuya")
-	if err !=nil{
+	err := es.Send(M.Email{
+		To:      "oqj@163.com",
+		Subject: "Hello World",
+		Text:    "this is a mail test",
+		HTML:    "<h1>Hello </h1>",
+	})
+	if err != nil {
 		panic(err)
 	}
 }

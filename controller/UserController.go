@@ -7,16 +7,20 @@ import (
 	"lenslocked/context"
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type UserController struct {
 	Template struct {
-		New   Template
-		Login Template
+		New            Template
+		Login          Template
+		ForgetPassword Template
+		CheckYourEmail Template
 	}
 	US M.UserService
 	SS M.SessionService
 	ES M.EmailService
+	PR M.PasswordResetService
 }
 
 func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
@@ -49,13 +53,13 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u UserController) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	user,err:=context.User(r.Context())
-	if err !=nil {
+	user, err := context.User(r.Context())
+	if err != nil {
 		fmt.Println(err)
-		http.Redirect(w,r,"/login",http.StatusFound)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	fmt.Fprintf(w, "current user name: %s",user.Name)
+	fmt.Fprintf(w, "current user name: %s", user.Name)
 }
 
 func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
@@ -77,18 +81,53 @@ func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "delete session error", http.StatusInternalServerError)
 		return
 	}
-	u.ES.Send(M.Email{
+	err = u.ES.Send(M.Email{
 		To:      user.Email,
 		Subject: "you had logout",
 		Text:    "",
 		HTML:    "<h1>sucessful to logout</h1>",
 	})
+	if err != nil {
+		fmt.Println(err)
+	}
 	setCookie(w, CookieSession, "")
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
 func (u UserController) Find(name string) {
 
+}
+
+func (u UserController) PasswordReset(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+	data.Email = r.FormValue("email")
+
+	u.Template.ForgetPassword.Execute(w, r, data)
+}
+
+func (u UserController) ProcessForgetPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+	data.Email = r.FormValue("email")
+	passwordReset, err := u.PR.Create(data.Email)
+	if err != nil {
+		fmt.Println(err)
+		http.Redirect(w, r, "/signup", http.StatusFound)
+		return
+	}
+	vals := url.Values{
+		"token": {passwordReset.Token},
+	}
+	err = u.ES.ForgetPassword(data.Email, "http://localhost:10010/reset-pw?"+vals.Encode())
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "failed to send email", http.StatusInternalServerError)
+		return
+	}
+	u.Template.CheckYourEmail.Execute(w, r, data)
 }
 
 func (u UserController) New(w http.ResponseWriter, r *http.Request) {
@@ -126,39 +165,39 @@ func (u UserController) ProcessLogin(w http.ResponseWriter, r *http.Request) {
 
 }
 
-type MiddleWare struct{
+type MiddleWare struct {
 	SS M.SessionService
 }
 
-func (m MiddleWare)SetUser(next http.Handler) http.Handler {
+func (m MiddleWare) SetUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := readCookie(r, CookieSession)
-	if err != nil {
-		fmt.Println("CurrentUser: get cookie error ", err)
-		next.ServeHTTP(w,r)
-		return
-	}
-	user, err := m.SS.User(token)
-	fmt.Println(user)
-	if err != nil {
-		fmt.Println("get user error", err)
-		next.ServeHTTP(w,r)
-		return
-	}
-	ctx:=context.WithUser(r.Context(),user)
-	r=r.WithContext(ctx)
-	next.ServeHTTP(w,r)
+		if err != nil {
+			fmt.Println("CurrentUser: get cookie error ", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+		user, err := m.SS.User(token)
+		fmt.Println(user)
+		if err != nil {
+			fmt.Println("get user error", err)
+			next.ServeHTTP(w, r)
+			return
+		}
+		ctx := context.WithUser(r.Context(), user)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(w, r)
 	})
 }
 
-func (m MiddleWare)RequireUser(next http.Handler) http.Handler {
+func (m MiddleWare) RequireUser(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_,err:=context.User(r.Context())
-		if err !=nil{
+		_, err := context.User(r.Context())
+		if err != nil {
 			fmt.Println(err)
-			http.Error(w,"required user",http.StatusBadRequest)
+			http.Error(w, "required user", http.StatusBadRequest)
 			return
 		}
-		next.ServeHTTP(w,r)
-	})}
-
+		next.ServeHTTP(w, r)
+	})
+}
