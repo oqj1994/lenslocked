@@ -35,3 +35,10 @@ func SessionToken(n int) (string, error) {
 	}
 	return String(n)
 }
+
+func ResetSetPasswordToken(n int) (string, error) {
+	if n < MinSessionTokenBytes {
+		return String(MinSessionTokenBytes)
+	}
+	return String(n)
+}

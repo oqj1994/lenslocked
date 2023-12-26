@@ -42,6 +42,7 @@ values ($1,$2,$3) returning id;`
 	row := us.DB.QueryRow(sqlStr, user.Name, user.Email, passwordHash)
 
 	err = row.Scan(&u.ID)
+	fmt.Println("run on here ...........")
 	if err != nil {
 		return nil, fmt.Errorf("insert into DB error:%w", err)
 	}
@@ -62,9 +63,25 @@ func (us *UserService) Authenticate(parms AuthenticateParms) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(user.PasswordHash)
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(parms.Password)) != nil {
 		return nil, errors.New("password error!")
 	}
 
 	return &user, nil
+}
+
+func (us *UserService) UpdatePassword(userID int, newPassword string) error {
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("hash pw error :%w", err)
+	}
+	result, err := us.DB.Exec(`update users set password_hash=$2 where id=$1`, userID, string(passwordHash))
+	if err != nil {
+		return err
+	}
+	if n, _ := result.RowsAffected(); n != 1 {
+		return errors.New("failed to update passwordHash by id ")
+	}
+	return nil
 }

@@ -29,14 +29,6 @@ type SMTPConfig struct {
 
 func NewEmailService(cfg SMTPConfig) EmailService {
 	d := gomail.NewDialer(cfg.Host, cfg.Port, cfg.UserName, cfg.Password)
-	_, err := d.Dial()
-	if err != nil {
-		fmt.Println("dial error", err)
-		panic(err)
-	}
-	if err != nil {
-		return EmailService{}
-	}
 	return EmailService{
 		dialer: d,
 	}

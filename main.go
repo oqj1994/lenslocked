@@ -22,53 +22,52 @@ import (
 	"github.com/gorilla/csrf"
 )
 
-type config struct{
-	SMTPConfig M.SMTPConfig
+type config struct {
+	SMTPConfig     M.SMTPConfig
 	PostgresConfig M.PostgresConfig
-	Server struct{
+	Server         struct {
 		Address string
-		Port int
+		Port    int
 	}
-	CSRF	struct{
-		Key string
+	CSRF struct {
+		Key    string
 		Secure bool
 	}
 }
 
-func initConfig()(config,error){
+func initConfig() (config, error) {
 	var cfg config
-	err:=godotenv.Load(".env")
-	if err != nil{
-		return cfg,err
+	err := godotenv.Load(".env")
+	if err != nil {
+		return cfg, err
 	}
-	cfg.PostgresConfig=M.DefaultConfig()
-	cfg.SMTPConfig.Host=os.Getenv("SMTP_HOST")
-	portStr:=os.Getenv("SMTP_PORT")
-	cfg.SMTPConfig.Port,err=strconv.Atoi(portStr)
-	if err !=nil{
-		return cfg,err
+	cfg.PostgresConfig = M.DefaultConfig()
+	cfg.SMTPConfig.Host = os.Getenv("SMTP_HOST")
+	portStr := os.Getenv("SMTP_PORT")
+	cfg.SMTPConfig.Port, err = strconv.Atoi(portStr)
+	if err != nil {
+		return cfg, err
 	}
-	cfg.SMTPConfig.UserName=os.Getenv("SMTP_USERNAME")
-	cfg.SMTPConfig.Password=os.Getenv("SMTP_PASSWORD")
+	cfg.SMTPConfig.UserName = os.Getenv("SMTP_USERNAME")
+	cfg.SMTPConfig.Password = os.Getenv("SMTP_PASSWORD")
 
-	cfg.CSRF.Key="abcdefghizklmnopqrstuvwxyz123456"
-	cfg.CSRF.Secure=false
+	cfg.CSRF.Key = "abcdefghizklmnopqrstuvwxyz123456"
+	cfg.CSRF.Secure = false
 
-	serverPortStr:=os.Getenv("SERVER_PORT")
-	cfg.Server.Port,err=strconv.Atoi(serverPortStr)
-	if err !=nil{
-		return cfg,err
+	serverPortStr := os.Getenv("SERVER_PORT")
+	cfg.Server.Port, err = strconv.Atoi(serverPortStr)
+	if err != nil {
+		return cfg, err
 	}
 
-	return cfg,err
+	return cfg, err
 }
 
 func main() {
-	cfg,err:=initConfig()
-	if err !=nil{
+	cfg, err := initConfig()
+	if err != nil {
 		panic(err)
 	}
-
 
 	db, err := M.Open(cfg.PostgresConfig)
 	if err != nil {
@@ -80,7 +79,6 @@ func main() {
 		panic(err)
 	}
 
-
 	userService := M.UserService{
 		DB: db,
 	}
@@ -88,13 +86,13 @@ func main() {
 		DB:            db,
 		BytesPerToken: 32,
 	}
-	passwordResetService:=M.PasswordResetService{
+	passwordResetService := M.PasswordResetService{
 		BytesPerToken: 32,
 		DB:            db,
-		Duration:      1* time.Hour,
+		Duration:      1 * time.Hour,
 	}
 
-	emailService:=M.NewEmailService(cfg.SMTPConfig)
+	emailService := M.NewEmailService(cfg.SMTPConfig)
 
 	uc := controller.UserController{
 		US: userService,
@@ -108,17 +106,18 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger, csrfMiddleWare, userMiddleware.SetUser)
 
-	
 	r.Get("/", controller.StaticController(V.Must(V.ExcuteFS("index.html"))))
 	uc.Template.New = V.Must(V.ExcuteFS("signup.html"))
 	uc.Template.Login = V.Must(V.ExcuteFS("login.html"))
-	uc.Template.ForgetPassword=V.Must(V.ExcuteFS("forgetpassword.html"))
-	uc.Template.CheckYourEmail=V.Must(V.ExcuteFS("checkemail.html"))
-	uc.Template.ResetPassword=V.Must(V.ExcuteFS("resetpassword.html"))
+	uc.Template.ForgetPassword = V.Must(V.ExcuteFS("forgetpassword.html"))
+	uc.Template.CheckYourEmail = V.Must(V.ExcuteFS("checkemail.html"))
+	uc.Template.ResetPassword = V.Must(V.ExcuteFS("resetpassword.html"))
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
-	r.Get("/forgetPW",uc.PasswordReset)
-	r.Post("/precessForgetPassword",uc.ProcessForgetPassword)
+	r.Get("/forgetPW", uc.PasswordReset)
+	r.Get("/reset-pw", uc.ResetPassword)
+	r.Post("/process-reset-pw", uc.ProcessResetPassword)
+	r.Post("/precessForgetPassword", uc.ProcessForgetPassword)
 	r.Post("/logout", uc.Logout)
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
@@ -139,8 +138,8 @@ func main() {
 		r.Get("/", uc.CurrentUser)
 	})
 
-	fmt.Printf("run server on port %d\nPlease try to enjoy coding!!:)",cfg.Server.Port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d",cfg.Server.Port), r)
+	fmt.Printf("run server on port %d\nPlease try to enjoy coding!!:)", cfg.Server.Port)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), r)
 	if err != nil {
 		log.Println(err)
 		panic("run server error!")

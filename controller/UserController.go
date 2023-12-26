@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"lenslocked/M"
 	"lenslocked/V"
@@ -16,7 +18,7 @@ type UserController struct {
 		Login          Template
 		ForgetPassword Template
 		CheckYourEmail Template
-		ResetPassword Template
+		ResetPassword  Template
 	}
 	US M.UserService
 	SS M.SessionService
@@ -107,7 +109,11 @@ func (u UserController) ProcessForgetPassword(w http.ResponseWriter, r *http.Req
 	passwordReset, err := u.PR.Create(data.Email)
 	if err != nil {
 		fmt.Println(err)
-		http.Redirect(w, r, "/signup", http.StatusFound)
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Redirect(w, r, "/signup", http.StatusFound)
+			return
+		}
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
 	vals := url.Values{
@@ -122,39 +128,46 @@ func (u UserController) ProcessForgetPassword(w http.ResponseWriter, r *http.Req
 	u.Template.CheckYourEmail.Execute(w, r, data)
 }
 
-//ResetPassword to render a page to reset password
+// ResetPassword to render a page to reset password
 func (u UserController) ResetPassword(w http.ResponseWriter, r *http.Request) {
-	var data struct{
+	var data struct {
 		Token string
 	}
-	data.Token=r.PostFormValue("token")
-	u.Template.ResetPassword.Execute(w,r,data)
+	data.Token = r.FormValue("token")
+	fmt.Println("Token----------", data.Token)
+	u.Template.ResetPassword.Execute(w, r, data)
 }
 
 func (u UserController) ProcessResetPassword(w http.ResponseWriter, r *http.Request) {
-	var data struct{
-		Token string
+	var data struct {
+		Token    string
 		Password string
 	}
-	data.Token=r.PostFormValue("token")
-	data.Password=r.PostFormValue("password")
-	user,err:=u.PR.Consume(data.Token)
-	if err !=nil{
+	data.Token = r.PostFormValue("token")
+	data.Password = r.PostFormValue("password")
+	user, err := u.PR.Consume(data.Token)
+	if err != nil {
 		//TODO: 分别讨论 token失效 还是数据库无法连接
-		fmt.Println(err)
-		http.Error(w,"something went wrong",http.StatusInternalServerError)
+		fmt.Println("consume error: ", err)
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
 	//TODO: use UserService to update user's password
-
-	//TODO: if successed , login the user
-	session,err :=u.SS.Create(user.ID)
-	if err !=nil{
-		fmt.Println(err)
-		http.Error(w,"something went wrong",http.StatusInternalServerError)
+	err = u.US.UpdatePassword(user.ID, data.Password)
+	if err != nil {
+		fmt.Println("update user password error:", err)
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
 		return
 	}
-	setCookie(w,CookieSession,session.Token)
+
+	//TODO: if successed , login the user
+	session, err := u.SS.Create(user.ID)
+	if err != nil {
+		fmt.Println("create session error:", err)
+		http.Error(w, "something went wrong", http.StatusInternalServerError)
+		return
+	}
+	setCookie(w, CookieSession, session.Token)
 	http.Redirect(w, r, "/user/me", http.StatusFound)
 }
 
