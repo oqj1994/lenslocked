@@ -28,17 +28,21 @@ type UserController struct {
 
 func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 	//TODO: get the userName and password from request
-	email := r.PostFormValue("email")
-	password := r.PostFormValue("password")
+	var data struct{
+		Email string
+		Password string
+	}
+	data.Email = r.PostFormValue("email")
+	data.Password = r.PostFormValue("password")
 	name := "yyChat"
 	user, err := u.US.Create(M.CreateUserParms{
 		Name:     name,
-		Email:    email,
-		Password: password,
+		Email:    data.Email,
+		Password: data.Password,
 	})
 	if err != nil {
 		log.Println(err)
-		http.Error(w, "create user error", http.StatusInternalServerError)
+		u.Template.New.Execute(w,r,data,err)
 		return
 	}
 	session, err := u.SS.Create(user.ID)

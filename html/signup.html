@@ -9,6 +9,14 @@
           id="email"
           name="email"
           type="email"
+          {{
+          if
+          .Email
+          }}
+          value="{{ .Email }}"
+          {{
+          end
+          }}
           required
           class="border px-4 py-2 w-full"
         />
@@ -19,6 +27,14 @@
           id="password"
           name="password"
           type="password"
+          {{
+          if
+          .Password
+          }}
+          value="{{ .Password }}"
+          {{
+          end
+          }}
           class="border px-4 py-2 w-full"
         />
       </div>

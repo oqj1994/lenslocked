@@ -4,8 +4,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"golang.org/x/crypto/bcrypt"
 	"strings"
+
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
+	"golang.org/x/crypto/bcrypt"
+)
+
+var (
+	ErrEmailTaken =errors.New("models: email address is already in used ")
 )
 
 type User struct {
@@ -42,9 +49,14 @@ values ($1,$2,$3) returning id;`
 	row := us.DB.QueryRow(sqlStr, user.Name, user.Email, passwordHash)
 
 	err = row.Scan(&u.ID)
-	fmt.Println("run on here ...........")
 	if err != nil {
-		return nil, fmt.Errorf("insert into DB error:%w", err)
+		var pgError *pgconn.PgError
+		if errors.As(err,&pgError){
+			if pgError.Code==pgerrcode.UniqueViolation{
+				return nil,ErrEmailTaken
+			}
+		}
+		return nil, fmt.Errorf("create user :%w", err)
 	}
 	return &u, nil
 

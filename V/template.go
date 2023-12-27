@@ -37,6 +37,9 @@ func ExcuteFS(name string) (*Template, error) {
 		"currentUser": func() error {
 			return fmt.Errorf("currentUser not implement!")
 		},
+		"errors": func() error {
+			return fmt.Errorf("errors not implement!")
+		},
 	})
 	tpl, err := tpl.ParseFS(html.FS, "home.html", name)
 
@@ -50,7 +53,7 @@ type Template struct {
 	htmlTpl *template.Template
 }
 
-func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}) error {
+func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interface{},errs ...error) error {
 	tpl, err := t.htmlTpl.Clone()
 	if err != nil {
 		log.Printf("clone template error: %v", err)
@@ -68,7 +71,15 @@ func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interfac
 			}
 			return user
 		},
-	})
+		"errors":func ()[]string  {
+			var errorMessage []string
+			for _, e := range errs {
+				errorMessage=append(errorMessage, e.Error())
+			}
+			return errorMessage
+		},
+		},
+	)
 	var buf bytes.Buffer
 
 	err = tpl.Execute(&buf, data)
