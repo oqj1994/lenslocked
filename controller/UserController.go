@@ -2,11 +2,11 @@ package controller
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"lenslocked/M"
 	"lenslocked/V"
 	"lenslocked/context"
+	"lenslocked/errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -28,8 +28,8 @@ type UserController struct {
 
 func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 	//TODO: get the userName and password from request
-	var data struct{
-		Email string
+	var data struct {
+		Email    string
 		Password string
 	}
 	data.Email = r.PostFormValue("email")
@@ -42,7 +42,10 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Println(err)
-		u.Template.New.Execute(w,r,data,err)
+		if errors.Is(err, M.ErrEmailTaken) {
+			err = errors.Public(err, "this email was already in use")
+		}
+		u.Template.New.Execute(w, r, data, err)
 		return
 	}
 	session, err := u.SS.Create(user.ID)

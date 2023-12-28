@@ -2,6 +2,7 @@ package V
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -53,12 +54,14 @@ type Template struct {
 	htmlTpl *template.Template
 }
 
-func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interface{},errs ...error) error {
+func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interface{}, errs ...error) error {
 	tpl, err := t.htmlTpl.Clone()
 	if err != nil {
 		log.Printf("clone template error: %v", err)
 		return fmt.Errorf("cloning template error :%w", err)
 	}
+
+	errMsgs := errorMessage(errs...)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	tpl = tpl.Funcs(template.FuncMap{"csrfField": func() template.HTML {
 		return csrf.TemplateField(r)
@@ -71,14 +74,10 @@ func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interfac
 			}
 			return user
 		},
-		"errors":func ()[]string  {
-			var errorMessage []string
-			for _, e := range errs {
-				errorMessage=append(errorMessage, e.Error())
-			}
-			return errorMessage
+		"errors": func() []string {
+			return errMsgs
 		},
-		},
+	},
 	)
 	var buf bytes.Buffer
 
@@ -89,4 +88,20 @@ func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interfac
 	}
 	io.Copy(w, &buf)
 	return nil
+}
+
+func errorMessage(errs ...error) []string {
+	var errorMessage []string
+	var public interface {
+		Public() string
+	}
+	for _, e := range errs {
+		if errors.As(e, &public) {
+			errorMessage = append(errorMessage, public.Public())
+		} else {
+			errorMessage = append(errorMessage, "something went wrong")
+		}
+
+	}
+	return errorMessage
 }
