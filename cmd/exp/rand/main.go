@@ -1,17 +1,13 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 )
 
 func main() {
-	b := make([]byte, 32)
-	_,err:=rand.Read(b)
-	if err !=nil {
-		panic(err)
+	var names []error
+	names = append(names, nil)
+	for _,n:=range names{
+		fmt.Println(n)
 	}
-	fmt.Println(b)
-	fmt.Println(base64.URLEncoding.EncodeToString(b))
 }

@@ -112,6 +112,32 @@ func main() {
 	uc.Template.ForgetPassword = V.Must(V.ExcuteFS("forgetpassword.html"))
 	uc.Template.CheckYourEmail = V.Must(V.ExcuteFS("checkemail.html"))
 	uc.Template.ResetPassword = V.Must(V.ExcuteFS("resetpassword.html"))
+
+	//GalleryService init
+	
+	gs:=M.GalleryService{DB: db}
+	galleryMiddle:=controller.GalleryMiddleware{
+		GS: gs,
+	}
+	gc:=controller.GalleryController{
+		GS: gs,
+	}
+	gc.Template.New=V.Must(V.ExcuteFS("newGallery.html"))
+	gc.Template.Home=V.Must(V.ExcuteFS("galleryHome.html"))
+	
+	r.Route("/gallery",func(r chi.Router){
+		r.Use(userMiddleware.RequireUser)
+		r.Get("/new",gc.New)
+		r.Post("/new",gc.Create)
+		r.Get("/home",gc.Home)
+		r.Route("/{id}",func(r chi.Router) {
+			r.Use(galleryMiddle.Auth)
+			r.Post("/edit",nil)
+			r.Post("/delete",gc.Delete)
+			r.Get("/list",nil)
+		})
+	})
+
 	r.Get("/signup", uc.New)
 	r.Get("/login", uc.Login)
 	r.Get("/forgetPW", uc.PasswordReset)

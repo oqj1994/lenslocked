@@ -91,16 +91,21 @@ func (t *Template) Execute(w http.ResponseWriter, r *http.Request, data interfac
 }
 
 func errorMessage(errs ...error) []string {
+	
 	var errorMessage []string
 	var public interface {
 		Public() string
 	}
 	for _, e := range errs {
-		if errors.As(e, &public) {
-			errorMessage = append(errorMessage, public.Public())
-		} else {
-			errorMessage = append(errorMessage, "something went wrong")
+		if e !=nil{
+			if errors.As(e, &public) {
+				errorMessage = append(errorMessage, public.Public())
+			} else {
+				log.Println(e)
+				errorMessage = append(errorMessage, "something went wrong")
+			}
 		}
+		
 
 	}
 	return errorMessage

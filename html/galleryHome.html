@@ -1,0 +1,25 @@
+{{ define "page" }}
+
+<hr />
+<div
+  class="grid grid-cols-3 gap-16 bg-white w-1/2 mx-auto px-16 py-8 rounded-lg"
+>
+  <h3 class="font-bold text-2xl">Title</h3>
+  <h3 class="font-bold text-2xl">Desciption</h3>
+  <h3 class="font-bold text-2xl">Option</h3>
+  {{ range .Gallerys }}
+  <h4>{{ .Title }}</h4>
+  <h4>{{ .Description }}</h4>
+  <div class="flex flex-row justify-between">
+    <a href="">edit</a>
+    <a href="">view</a>
+    <form method="post" action="/gallery/{{.ID}}/delete">
+      <div class="hidden">{{ csrfField }}</div>
+      <button>delete</button>
+    </form>
+  </div>
+  {{end}}
+</div>
+{{ end }} {{define "js"}}
+<script></script>
+{{end}}
