@@ -9,7 +9,7 @@ type Gallery struct {
 	ID          int
 	Title       string
 	UserID      int
-	Description string
+	Desciption string
 }
 
 type GalleryService struct {
@@ -21,7 +21,7 @@ func (gs GalleryService) Create(title , desciption string,userID int)(*Gallery,e
 	//TODO: volidation in here
 	 gallery :=Gallery{
 		Title: title,
-		Description: desciption,
+		Desciption: desciption,
 		UserID: userID,
 	 }
 	row:=gs.DB.QueryRow(`insert into gallerys(title,desciption,user_id) values($1,$2,$3) returning id ;`,title,desciption,userID)
@@ -31,6 +31,16 @@ func (gs GalleryService) Create(title , desciption string,userID int)(*Gallery,e
 	}
 	return &gallery,nil
 }
+func (gs GalleryService) ByID(galleryID int)(*Gallery,error)  {
+	 g :=Gallery{ID: galleryID}
+	row:=gs.DB.QueryRow(`select title,desciption,user_id from gallerys where id =$1 ;`,galleryID)
+	err:=row.Scan(&g.Title,&g.Desciption,&g.UserID)
+	if err !=nil{
+		return nil,err
+	}
+	return &g,nil
+}
+
 
 func (gs GalleryService) List(userID int)([]Gallery,error)  {
 	gallerys:=[]Gallery{}
@@ -41,7 +51,7 @@ func (gs GalleryService) List(userID int)([]Gallery,error)  {
 	defer rows.Close()
 	for rows.Next(){
 		var gallery Gallery
-		err=rows.Scan(&gallery.ID,&gallery.Title,&gallery.UserID,&gallery.Description)
+		err=rows.Scan(&gallery.ID,&gallery.Title,&gallery.UserID,&gallery.Desciption)
 		if err !=nil{
 			return nil,err
 		}

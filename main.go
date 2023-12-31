@@ -122,8 +122,9 @@ func main() {
 	gc:=controller.GalleryController{
 		GS: gs,
 	}
-	gc.Template.New=V.Must(V.ExcuteFS("newGallery.html"))
-	gc.Template.Home=V.Must(V.ExcuteFS("galleryHome.html"))
+	gc.Templates.New=V.Must(V.ExcuteFS("newGallery.html"))
+	gc.Templates.Home=V.Must(V.ExcuteFS("galleryHome.html"))
+	gc.Templates.Edit=V.Must(V.ExcuteFS("galleryEdit.html"))
 	
 	r.Route("/gallery",func(r chi.Router){
 		r.Use(userMiddleware.RequireUser)
@@ -132,9 +133,11 @@ func main() {
 		r.Get("/home",gc.Home)
 		r.Route("/{id}",func(r chi.Router) {
 			r.Use(galleryMiddle.Auth)
-			r.Post("/edit",nil)
+			r.Use(galleryMiddle.GalleryRequire)
+			r.Post("/update",gc.Update)
+			r.Get("/edit",gc.Edit)
 			r.Post("/delete",gc.Delete)
-			r.Get("/list",nil)
+			r.Get("/",nil)
 		})
 	})
 

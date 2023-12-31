@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"lenslocked/M"
 	"lenslocked/context"
 	"log"
@@ -11,9 +12,10 @@ import (
 )
 
 type GalleryController struct {
-	Template struct {
+	Templates struct {
 		New Template
 		Home Template
+		Edit Template
 	}
 	GS M.GalleryService
 }
@@ -29,7 +31,7 @@ func (gc GalleryController) New(w http.ResponseWriter,r *http.Request){
 		return
 	}
 	data.ID=user.ID
-	gc.Template.New.Execute(w,r,data,nil)
+	gc.Templates.New.Execute(w,r,data,nil)
 }
 
 func (gc GalleryController) Create(w http.ResponseWriter,r *http.Request){
@@ -66,7 +68,7 @@ func (gc GalleryController) Home(w http.ResponseWriter,r *http.Request){
 		http.Error(w,"something went wrong",http.StatusBadRequest)
 		return
 	}
-	gc.Template.Home.Execute(w,r,data)
+	gc.Templates.Home.Execute(w,r,data)
 }
 
 func (gc GalleryController) Delete(w http.ResponseWriter,r *http.Request){
@@ -81,6 +83,35 @@ func (gc GalleryController) Delete(w http.ResponseWriter,r *http.Request){
 	if err !=nil{
 		log.Println(err)
 		http.Error(w,"delete gallery error ",http.StatusInternalServerError)
+		return
+	}
+	http.Redirect(w,r,"/gallery/home",http.StatusFound)
+}
+
+func (gc GalleryController) Edit(w http.ResponseWriter,r *http.Request){
+	gallery,err:=context.Gallery(r.Context())
+	if err !=nil{
+		fmt.Println(err)
+		http.Redirect(w,r,"/gallery/home",http.StatusFound)
+		return
+	}
+	gc.Templates.Edit.Execute(w,r,gallery)
+}
+
+func (gc GalleryController) Update(w http.ResponseWriter,r *http.Request){
+	IDStr:=chi.URLParam(r,"id")
+	galleryID,err:=strconv.Atoi(IDStr)
+	if err !=nil{
+		log.Println(err)
+		http.Error(w,"url params error ",http.StatusBadRequest)
+		return
+	}
+	title:=r.PostFormValue("title")
+	description:=r.PostFormValue("desciption")
+	err =gc.GS.Update(title,description,galleryID)
+	if err !=nil{
+		log.Println(err)
+		http.Error(w,"gallery update failed ",http.StatusInternalServerError)
 		return
 	}
 	http.Redirect(w,r,"/gallery/home",http.StatusFound)
@@ -114,5 +145,26 @@ func(gm GalleryMiddleware) Auth(next http.Handler)http.Handler{
 			return
 		}
 		next.ServeHTTP(w,r)
+	})
+}
+
+func(gm GalleryMiddleware) GalleryRequire(next http.Handler)http.Handler{
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		IDStr:=chi.URLParam(r,"id")
+	galleryID,err:=strconv.Atoi(IDStr)
+	if err !=nil{
+		log.Println(err)
+		http.Error(w,"url params error ",http.StatusBadRequest)
+		return
+	}
+	gallery,err:=gm.GS.ByID(galleryID)
+	if err !=nil{
+		log.Println(err)
+		http.Error(w,"get gallery error ",http.StatusInternalServerError)
+		return
+	}
+	ctx:=context.WithGallery(r.Context(),gallery)
+	r=r.WithContext(ctx)
+	next.ServeHTTP(w,r)
 	})
 }
