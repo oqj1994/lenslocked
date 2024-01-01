@@ -1,0 +1,19 @@
+{{ define "page" }}
+<div class="bg-gray-100 p-8">
+  <div class="p-4">
+    <h1 class="text-2xl bg-grap-400 text-white font-bold mb-4">
+      {{ .Gallery.Title }}
+    </h1>
+    <p>{{ .Gallery.Desciption }}</p>
+  </div>
+  <div class="columns-4 gap-4">
+    {{ range .Images }}
+    <div class="pt-3">
+      <img src="{{ . }}" />
+    </div>
+    {{ end }}
+  </div>
+</div>
+{{ end }} {{define "js"}}
+<script></script>
+{{end}}

@@ -125,20 +125,30 @@ func main() {
 	gc.Templates.New=V.Must(V.ExcuteFS("newGallery.html"))
 	gc.Templates.Home=V.Must(V.ExcuteFS("galleryHome.html"))
 	gc.Templates.Edit=V.Must(V.ExcuteFS("galleryEdit.html"))
+	gc.Templates.List=V.Must(V.ExcuteFS("galleryIndex.html"))
 	
 	r.Route("/gallery",func(r chi.Router){
-		r.Use(userMiddleware.RequireUser)
-		r.Get("/new",gc.New)
-		r.Post("/new",gc.Create)
-		r.Get("/home",gc.Home)
+		r.Group(func(r chi.Router) {
+			r.Use(userMiddleware.RequireUser)
+			r.Get("/new",gc.New)
+			r.Post("/new",gc.Create)
+			r.Get("/home",gc.Home)
+		})
+		
+		
 		r.Route("/{id}",func(r chi.Router) {
-			r.Use(galleryMiddle.Auth)
 			r.Use(galleryMiddle.GalleryRequire)
+			r.Group(func(r chi.Router) {
+			r.Use(galleryMiddle.Auth)
+			
 			r.Post("/update",gc.Update)
 			r.Get("/edit",gc.Edit)
 			r.Post("/delete",gc.Delete)
-			r.Get("/",nil)
+			})
+			r.Get("/",gc.List)
+			
 		})
+		
 	})
 
 	r.Get("/signup", uc.New)

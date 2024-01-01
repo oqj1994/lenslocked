@@ -5,6 +5,7 @@ import (
 	"lenslocked/M"
 	"lenslocked/context"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 
@@ -16,6 +17,7 @@ type GalleryController struct {
 		New Template
 		Home Template
 		Edit Template
+		List Template
 	}
 	GS M.GalleryService
 }
@@ -96,6 +98,27 @@ func (gc GalleryController) Edit(w http.ResponseWriter,r *http.Request){
 		return
 	}
 	gc.Templates.Edit.Execute(w,r,gallery)
+}
+
+func (gc GalleryController) List(w http.ResponseWriter,r *http.Request){
+	gallery,err:=context.Gallery(r.Context())
+	if err !=nil{
+		fmt.Println(err)
+		http.Redirect(w,r,"/gallery/home",http.StatusFound)
+		return
+	}
+	var data struct{
+		Gallery M.Gallery
+		Images []string
+	}
+	data.Gallery.Title=gallery.Title
+	data.Gallery.Desciption=gallery.Desciption
+	for i:=0;i<20;i++{
+		w,h:=rand.Intn(500)+200,rand.Intn(500)+200
+		imgUrl:=fmt.Sprintf("https://placekitten.com/%d/%d",w,h)
+		data.Images=append(data.Images, imgUrl)
+	}
+	gc.Templates.List.Execute(w,r,data)
 }
 
 func (gc GalleryController) Update(w http.ResponseWriter,r *http.Request){
