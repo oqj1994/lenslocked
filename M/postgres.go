@@ -24,7 +24,7 @@ func DefaultConfig() PostgresConfig {
 		Host:     "localhost",
 		Port:     "5432",
 		UserName: "root",
-		Password: "password",
+		Password: "123456",
 		DBName:   "lenslocked",
 		SSLMODE:  "disable",
 	}

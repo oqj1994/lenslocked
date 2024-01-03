@@ -1,8 +1,6 @@
 package main
 
-import (
-	"lenslocked/M"
-)
+import "lenslocked/M"
 
 func main() {
 	// m:=gomail.NewMessage()
@@ -32,21 +30,7 @@ func main() {
 	// 	Text:    "raw text",
 	// 	HTML:    "<h1>Welcome!!</h1>",
 	// }
+	service := M.GalleryService{}
+	service.Images(1)
 
-	es := M.NewEmailService(M.SMTPConfig{
-		Host:     "sandbox.smtp.mailtrap.io",
-		Port:     25,
-		UserName: "7b4e8c97b7bebc",
-		Password: "2136315cbe2186",
-	})
-	// err:=es.Send(email)
-	err := es.Send(M.Email{
-		To:      "oqj@163.com",
-		Subject: "Hello World",
-		Text:    "this is a mail test",
-		HTML:    "<h1>Hello </h1>",
-	})
-	if err != nil {
-		panic(err)
-	}
 }

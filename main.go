@@ -114,41 +114,41 @@ func main() {
 	uc.Template.ResetPassword = V.Must(V.ExcuteFS("resetpassword.html"))
 
 	//GalleryService init
-	
-	gs:=M.GalleryService{DB: db}
-	galleryMiddle:=controller.GalleryMiddleware{
+
+	gs := M.GalleryService{DB: db}
+	galleryMiddle := controller.GalleryMiddleware{
 		GS: gs,
 	}
-	gc:=controller.GalleryController{
+	gc := controller.GalleryController{
 		GS: gs,
 	}
-	gc.Templates.New=V.Must(V.ExcuteFS("newGallery.html"))
-	gc.Templates.Home=V.Must(V.ExcuteFS("galleryHome.html"))
-	gc.Templates.Edit=V.Must(V.ExcuteFS("galleryEdit.html"))
-	gc.Templates.List=V.Must(V.ExcuteFS("galleryIndex.html"))
-	
-	r.Route("/gallery",func(r chi.Router){
+	gc.Templates.New = V.Must(V.ExcuteFS("newGallery.html"))
+	gc.Templates.Home = V.Must(V.ExcuteFS("galleryHome.html"))
+	gc.Templates.Edit = V.Must(V.ExcuteFS("galleryEdit.html"))
+	gc.Templates.List = V.Must(V.ExcuteFS("galleryIndex.html"))
+
+	r.Route("/gallery", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(userMiddleware.RequireUser)
-			r.Get("/new",gc.New)
-			r.Post("/new",gc.Create)
-			r.Get("/home",gc.Home)
+			r.Get("/new", gc.New)
+			r.Post("/new", gc.Create)
+			r.Get("/home", gc.Home)
 		})
-		
-		
-		r.Route("/{id}",func(r chi.Router) {
-			r.Use(galleryMiddle.GalleryRequire)
+
+		r.Route("/{id}", func(r chi.Router) {
+			r.Get("/images/{filename}", gc.Image)
 			r.Group(func(r chi.Router) {
-			r.Use(galleryMiddle.Auth)
-			
-			r.Post("/update",gc.Update)
-			r.Get("/edit",gc.Edit)
-			r.Post("/delete",gc.Delete)
+				r.Use(galleryMiddle.GalleryRequire)
+				r.Use(galleryMiddle.Auth)
+
+				r.Post("/update", gc.Update)
+				r.Get("/edit", gc.Edit)
+				r.Post("/delete", gc.Delete)
 			})
-			r.Get("/",gc.List)
-			
+			r.Get("/", gc.List)
+
 		})
-		
+
 	})
 
 	r.Get("/signup", uc.New)

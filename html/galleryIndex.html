@@ -6,10 +6,10 @@
     </h1>
     <p>{{ .Gallery.Desciption }}</p>
   </div>
-  <div class="columns-4 gap-4">
+  <div class="columns-8 gap-4">
     {{ range .Images }}
     <div class="pt-3">
-      <img src="{{ . }}" />
+      <img class="w-32 " src="/gallery/{{.GalleryID}}/images/{{.FileName}}" />
     </div>
     {{ end }}
   </div>
