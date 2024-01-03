@@ -2,9 +2,17 @@ package M
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"io/fs"
+	"log"
+	"os"
 	"path/filepath"
 	"strings"
+)
+
+var (
+	ErrNotFound =errors.New("models: image not found ")
 )
 
 type Gallery struct {
@@ -15,6 +23,7 @@ type Gallery struct {
 }
 
 type Image struct {
+	Path string
 	FileName  string
 	GalleryID int
 }
@@ -47,7 +56,7 @@ func (gs GalleryService) ByID(galleryID int) (*Gallery, error) {
 	}
 	return &g, nil
 }
-func (gs GalleryService) GalleryDir(galleryID int) string {
+func (gs GalleryService) galleryDir(galleryID int) string {
 	imageDir := gs.ImageDir
 	if imageDir == "" {
 		imageDir = "images"
@@ -57,6 +66,7 @@ func (gs GalleryService) GalleryDir(galleryID int) string {
 
 func (gs GalleryService) List(userID int) ([]Gallery, error) {
 	gallerys := []Gallery{}
+	log.Println("userID:  ",userID)
 	rows, err := gs.DB.Query(`select * from gallerys where user_id =$1 ;`, userID)
 	if err != nil {
 		return nil, err
@@ -76,8 +86,32 @@ func (gs GalleryService) List(userID int) ([]Gallery, error) {
 	return gallerys, nil
 }
 
+func (gs GalleryService) Image(galleryID int,fileName string) (Image,error) {
+	imagePath:=filepath.Join(gs.galleryDir(galleryID),fileName)
+	_,err:=os.Stat(imagePath)
+	if err !=nil{
+		if errors.Is(err,fs.ErrNotExist){
+			return Image{},ErrEmailTaken
+		}
+		return Image{},fmt.Errorf("query for image :%w", err)
+	}
+	return Image{GalleryID: galleryID,Path: imagePath,FileName: fileName},nil
+}
+
+func (gs GalleryService) DeleteImage(galleryID int,fileName string) error {
+	img,err:=gs.Image(galleryID,fileName)
+	if err !=nil{
+		return fmt.Errorf("find Image : %w",err)
+	}
+	err=os.Remove(img.Path)
+	if err !=nil{
+		return fmt.Errorf("delete Image : %w",err)
+	}
+	return nil
+}
+
 func (gs GalleryService) Images(galleryID int) (imgs []Image, err error) {
-	dir := filepath.Join(gs.GalleryDir(galleryID), "*")
+	dir := filepath.Join(gs.galleryDir(galleryID), "*")
 	files, err := filepath.Glob(dir)
 	fmt.Println(files)
 	if err != nil {
@@ -86,10 +120,9 @@ func (gs GalleryService) Images(galleryID int) (imgs []Image, err error) {
 	for _, file := range files {
 		if hasExtension(file, gs.extensions()) {
 
-			imgs = append(imgs, Image{FileName: filepath.Base(file), GalleryID: galleryID})
+			imgs = append(imgs, Image{FileName: filepath.Base(file), GalleryID: galleryID,Path: file})
 		}
 	}
-	fmt.Println(imgs)
 	return imgs, nil
 }
 

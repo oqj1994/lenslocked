@@ -140,7 +140,8 @@ func main() {
 			r.Group(func(r chi.Router) {
 				r.Use(galleryMiddle.GalleryRequire)
 				r.Use(galleryMiddle.Auth)
-
+				r.Post("/images/{filename}/delete",gc.DeleteImage)
+				r.Post("/images",gc.UploadImage)
 				r.Post("/update", gc.Update)
 				r.Get("/edit", gc.Edit)
 				r.Post("/delete", gc.Delete)

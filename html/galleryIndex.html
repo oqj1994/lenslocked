@@ -8,8 +8,16 @@
   </div>
   <div class="columns-8 gap-4">
     {{ range .Images }}
-    <div class="pt-3">
-      <img class="w-32 " src="/gallery/{{.GalleryID}}/images/{{.FileName}}" />
+    <div class="pt-3 relative">
+      <a
+        href="/gallery/{{.GalleryID}}/images/{{.FileNameEscape}}"
+        target="_blank"
+      >
+        <img
+          class="w-full"
+          src="/gallery/{{.GalleryID}}/images/{{.FileNameEscape}}"
+        />
+      </a>
     </div>
     {{ end }}
   </div>

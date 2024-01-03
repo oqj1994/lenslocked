@@ -1,19 +1,15 @@
 {{ define "page" }}
-<div class="flex justify-center h-screen items-center bg-gray-100">
-  <div class="border rounded bg-white px-10 py-10 w-3/4">
-    <h1 class="text-3xl text-center font-bold mb-4">Create new Gallery</h1>
-    <form
-      method="post"
-      action="/gallery/{{ .ID }}/update"
-      class="flex flex-row justify-between"
-    >
+<div class="">
+  <div class="rounded bg-white px-10 py-10 w-3/4">
+    <h1 class="text-3xl font-bold mb-4">创建新的相册</h1>
+    <form method="post" action="/gallery/{{ .Gallery.ID }}/update" class="">
       <div class="mb-4">
         <label for="title">Title</label>
         <input
           id="title"
           name="title"
           type="text"
-          value="{{ .Title }}"
+          value="{{ .Gallery.Title }}"
           required
           class="border px-4 py-2 w-full"
         />
@@ -24,15 +20,62 @@
           id="desciption"
           name="desciption"
           type="text"
-          value="{{ .Desciption }}"
+          value="{{ .Gallery.Desciption }}"
           class="border px-4 py-2 w-full"
         />
       </div>
       <div>{{ csrfField }}</div>
-      <button type="submit" class="text-center px-10 py-2 text-xl">修改</button>
+      <button
+        type="submit"
+        class="text-center px-10 py-2 text-xl border bg-blue-400 rounded"
+      >
+        修改
+      </button>
     </form>
   </div>
 </div>
+
+ <div class="py-4 px-10">
+  <form method="post" action="/gallery/{{.Gallery.ID}}/images" enctype="multipart/form-data" >
+    <label for="images" class="block pb-2 px-4 ">上传新的图片</label>
+    <div>{{ csrfField }}</div>
+    <input id="images" name="images" multiple type="file" accept="image/png,image/jpg,image/gif,image/jpeg">
+    <button class="text-sm bg-green-100 text-green-800 rounded px-4 py-2" type="submit">upload</button>
+  </form>
+
+</div>
+<div class="px-10">
+  <div class="pb-4">
+    <h2 class="text-gray-800  text-sm">当前的图片</h2>
+  </div>
+<div class="grid grid-cols-8 gap-4 py-2">
+  {{ range .Images }}
+  <div class="pt-3 relative">
+    {{template "deleteForm" .}}
+    <a
+      href="/gallery/{{.GalleryID}}/images/{{.FileNameEscape}}"
+      target="_blank"
+    >
+      <img
+        class="w-full rounded"
+        src="/gallery/{{.GalleryID}}/images/{{.FileNameEscape}}"
+      />
+    </a>
+  </div>
+</div>
+  {{ end }}
+</div>
+</div>
 {{ end }} {{define "js"}}
 <script></script>
+{{end}}  {{define "deleteForm"}}
+<div class="absolute right-2 top-4">
+  <form
+    action="/gallery/{{.GalleryID}}/images/{{.FileNameEscape}}/delete"
+    method="post"
+  >
+    {{ csrfField }}
+    <button class="text-sm bg-red-100 text-red-800 rounded px-4 py-2" type="submit">删除</button>
+  </form>
+</div>
 {{end}}

@@ -62,9 +62,9 @@ func (ss SessionService) Delete(userID int) error {
 func (ss SessionService) User(token string) (*User, error) {
 	user := User{}
 	
-	sqlStr := `select name,email from users u join sessions s on u.id=s.user_id where s.token_hash=$1;`
+	sqlStr := `select u.id,name,email from users u join sessions s on u.id=s.user_id where s.token_hash=$1;`
 	row := ss.DB.QueryRow(sqlStr, ss.hash(token))
-	err := row.Scan(&user.Name, &user.Email)
+	err := row.Scan(&user.ID,&user.Name, &user.Email)
 	if err != nil {
 		return nil, fmt.Errorf("create :%w", err)
 	}
