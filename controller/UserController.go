@@ -209,7 +209,7 @@ func (u UserController) ProcessLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	setCookie(w, CookieSession, session.Token)
-	http.Redirect(w, r, "/user/me", http.StatusFound)
+	http.Redirect(w, r, "/gallery/home", http.StatusFound)
 
 }
 
