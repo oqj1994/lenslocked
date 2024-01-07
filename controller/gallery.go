@@ -217,6 +217,12 @@ func (gc GalleryController) UploadImage(w http.ResponseWriter, r *http.Request) 
 		defer file.Close()
 		err = gc.GS.CreateImage(galleryID, header.Filename, file)
 		if err != nil {
+			var fileError M.FileError
+			if errors.As(err,&fileError){
+				msg:=fmt.Sprintf("%v has an invalid content type or extension, only png,jpeg,gif files can be upload ",header.Filename)
+				http.Error(w,msg,http.StatusBadRequest)
+				return
+			} 
 			log.Println(err)
 			http.Error(w, "something went wrong ", http.StatusInternalServerError)
 			return

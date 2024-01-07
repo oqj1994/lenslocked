@@ -12,9 +12,7 @@ import (
 	"strings"
 )
 
-var (
-	ErrNotFound = errors.New("models: image not found ")
-)
+
 
 type Gallery struct {
 	ID         int
@@ -32,6 +30,12 @@ type Image struct {
 type GalleryService struct {
 	ImageDir string
 	DB       *sql.DB
+}
+
+func(gs GalleryService) allowType()[]string{
+	return []string{
+		"image/jpeg","image/png","image/gif",
+	}
 }
 
 func (gs GalleryService) Create(title, desciption string, userID int) (*Gallery, error) {
@@ -99,16 +103,24 @@ func (gs GalleryService) Image(galleryID int, fileName string) (Image, error) {
 	return Image{GalleryID: galleryID, Path: imagePath, FileName: fileName}, nil
 }
 
-func (gs GalleryService) CreateImage(galleryID int, filename string, contents io.Reader) error {
+func (gs GalleryService) CreateImage(galleryID int, filename string, contents io.ReadSeeker) error {
+	err:=checkContentType(contents,gs.allowType())
+	if err != nil {
+		return fmt.Errorf("creating image  :%w", err)
+	}
+	err=checkExtension(filename,gs.extensions())
+	if err != nil {
+		return fmt.Errorf("creating image  :%w", err)
+	}
 	imageDir := gs.galleryDir(galleryID)
 	imagePath := filepath.Join(imageDir, filename)
-	err := os.MkdirAll(imageDir, 0755)
+	err = os.MkdirAll(imageDir, 0755)
 	if err != nil {
-		return fmt.Errorf("creating image dir :%w", err)
+		return fmt.Errorf("creating image  :%w", err)
 	}
 	file, err := os.Create(imagePath)
 	if err != nil {
-		return fmt.Errorf("creating file dir :%w", err)
+		return fmt.Errorf("creating image  :%w", err)
 	}
 	defer file.Close()
 	io.Copy(file, contents)
