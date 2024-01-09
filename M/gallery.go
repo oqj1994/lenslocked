@@ -174,7 +174,13 @@ func (gs GalleryService) Update(title, desciption string, id int) error {
 	return nil
 }
 func (gs GalleryService) Delete(id int) error {
-	_, err := gs.DB.Exec(`delete from gallerys where id=$1`, id)
+	galleryPath:=gs.galleryDir(id)
+	_,err:=os.Stat(galleryPath)
+	if err !=nil{
+		return fmt.Errorf("delete gallery : %w",err)
+	}
+	os.RemoveAll(galleryPath)
+	_, err = gs.DB.Exec(`delete from gallerys where id=$1`, id)
 	if err != nil {
 		return err
 	}

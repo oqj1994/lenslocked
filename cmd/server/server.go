@@ -27,7 +27,6 @@ type config struct {
 	PostgresConfig M.PostgresConfig
 	Server         struct {
 		Address string
-		Port    int
 	}
 	CSRF struct {
 		Key    string
@@ -41,7 +40,14 @@ func initConfig() (config, error) {
 	if err != nil {
 		return cfg, err
 	}
-	cfg.PostgresConfig = M.DefaultConfig()
+	cfg.PostgresConfig = M.PostgresConfig{
+		Host:     os.Getenv("DB_HOST"),
+		Port:     os.Getenv("DB_PORT"),
+		UserName: os.Getenv("DB_USERNAME"),
+		Password: os.Getenv("DB_PAS"),
+		DBName:   os.Getenv("DB_DB_NAME"),
+		SSLMODE:  os.Getenv("DB_SSLMODE"),
+	}
 	cfg.SMTPConfig.Host = os.Getenv("SMTP_HOST")
 	portStr := os.Getenv("SMTP_PORT")
 	cfg.SMTPConfig.Port, err = strconv.Atoi(portStr)
@@ -51,16 +57,18 @@ func initConfig() (config, error) {
 	cfg.SMTPConfig.UserName = os.Getenv("SMTP_USERNAME")
 	cfg.SMTPConfig.Password = os.Getenv("SMTP_PASSWORD")
 
-	cfg.CSRF.Key = "abcdefghizklmnopqrstuvwxyz123456"
-	cfg.CSRF.Secure = false
-
-	serverPortStr := os.Getenv("SERVER_PORT")
-	cfg.Server.Port, err = strconv.Atoi(serverPortStr)
-	if err != nil {
-		return cfg, err
+	cfg.CSRF.Key = os.Getenv("CSRF_KEY")
+	fmt.Println("CSRF_SECURE: ",os.Getenv("CSRF_SECURE"))
+	cfg.CSRF.Secure ,err= strconv.ParseBool(os.Getenv("CSRF_SECURE"))
+	if err !=nil{
+		return config{},err
+	}
+	cfg.Server.Address=os.Getenv("SERVER_ADDRESS")
+	if err !=nil{
+		return config{},err
 	}
 
-	return cfg, err
+	return cfg, nil
 }
 
 func main() {
@@ -178,8 +186,8 @@ func main() {
 		r.Get("/", uc.CurrentUser)
 	})
 
-	fmt.Printf("run server on port %d\nPlease try to enjoy coding!!:)", cfg.Server.Port)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", cfg.Server.Port), r)
+	fmt.Printf("run server on address %s\nPlease try to enjoy coding!!:)", cfg.Server.Address)
+	err = http.ListenAndServe(cfg.Server.Address, r)
 	if err != nil {
 		log.Println(err)
 		panic("run server error!")
