@@ -1,2 +1,2 @@
-tailwind:
-	npx tailwindcss -i ./html/src/input.css -o ./html/src/style.css --watch
+tail:
+	npx tailwindcss -c ./tailwind/tailwind.config.js -i ./tailwind/input.css -o ./html/src/style.css --watch
