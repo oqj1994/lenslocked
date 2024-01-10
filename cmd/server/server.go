@@ -58,14 +58,14 @@ func initConfig() (config, error) {
 	cfg.SMTPConfig.Password = os.Getenv("SMTP_PASSWORD")
 
 	cfg.CSRF.Key = os.Getenv("CSRF_KEY")
-	fmt.Println("CSRF_SECURE: ",os.Getenv("CSRF_SECURE"))
-	cfg.CSRF.Secure ,err= strconv.ParseBool(os.Getenv("CSRF_SECURE"))
-	if err !=nil{
-		return config{},err
+	fmt.Println("CSRF_SECURE: ", os.Getenv("CSRF_SECURE"))
+	cfg.CSRF.Secure, err = strconv.ParseBool(os.Getenv("CSRF_SECURE"))
+	if err != nil {
+		return config{}, err
 	}
-	cfg.Server.Address=os.Getenv("SERVER_ADDRESS")
-	if err !=nil{
-		return config{},err
+	cfg.Server.Address = os.Getenv("SERVER_ADDRESS")
+	if err != nil {
+		return config{}, err
 	}
 
 	return cfg, nil
@@ -148,8 +148,8 @@ func main() {
 			r.Group(func(r chi.Router) {
 				r.Use(galleryMiddle.GalleryRequire)
 				r.Use(galleryMiddle.Auth)
-				r.Post("/images/{filename}/delete",gc.DeleteImage)
-				r.Post("/images",gc.UploadImage)
+				r.Post("/images/{filename}/delete", gc.DeleteImage)
+				r.Post("/images", gc.UploadImage)
 				r.Post("/update", gc.Update)
 				r.Get("/edit", gc.Edit)
 				r.Post("/delete", gc.Delete)
@@ -170,21 +170,16 @@ func main() {
 	r.Get("/cookie", controller.ReadCookie)
 	r.Post("/user", uc.Create)
 	r.Post("/login", uc.ProcessLogin)
-	r.Handle("/assert/*", http.StripPrefix("/assert/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/src/*", http.StripPrefix("/src/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
-		f, err := html.FS.ReadFile(path.Join("assert", p))
+		f, err := html.FS.ReadFile(path.Join("src", p))
 		if err != nil {
 			http.Error(w, "read assert error", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "text/plain")
+		w.Header().Set("Content-Type", "text/css")
 		w.Write(f)
 	})))
-	r.Route("/user/me", func(r chi.Router) {
-
-		r.Use(userMiddleware.RequireUser)
-		r.Get("/", uc.CurrentUser)
-	})
 
 	fmt.Printf("run server on address %s\nPlease try to enjoy coding!!:)", cfg.Server.Address)
 	err = http.ListenAndServe(cfg.Server.Address, r)

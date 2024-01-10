@@ -54,22 +54,11 @@ func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	fmt.Println("session in controller :", session)
 	setCookie(w, CookieSession, session.Token)
 
-	http.Redirect(w, r, "/user/me", http.StatusFound)
+	http.Redirect(w, r, "/gallery/home", http.StatusFound)
 	//TODO: use the model to add user data
 	//TODO: then base on the result to render some page or return error to the responseWriter
-}
-
-func (u UserController) CurrentUser(w http.ResponseWriter, r *http.Request) {
-	user, err := context.User(r.Context())
-	if err != nil {
-		fmt.Println(err)
-		http.Redirect(w, r, "/login", http.StatusFound)
-		return
-	}
-	fmt.Fprintf(w, "current user name: %s", user.Name)
 }
 
 func (u UserController) Logout(w http.ResponseWriter, r *http.Request) {
